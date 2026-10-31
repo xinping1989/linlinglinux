@@ -4,6 +4,11 @@ project(danarc)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(glfw3 REQUIRED)
+if(NOT glfw3_FOUND)
+    find_package(glfw REQUIRED)
+    set(glfw3_LIBRARIES ${glfw_LIBRARIES})
+    set(glfw3_INCLUDE_DIRS ${glfw_INCLUDE_DIRS})
+endif()
 find_package(OpenGL REQUIRED)
 
 # Download and include Dear ImGui with GLFW and OpenGL3 backends
@@ -47,7 +52,7 @@ set(IMGUI_BACKEND_SOURCES
 add_executable(danarc ${SOURCES} ${imgui_SOURCES} ${IMGUI_BACKEND_SOURCES})
 
 target_link_libraries(danarc
-    glfw
+    ${glfw3_LIBRARIES}
     OpenGL::GL
     imgui
     X11
