@@ -6,7 +6,31 @@ set(CMAKE_CXX_STANDARD 17)
 # Use local ImGui from imgui/ directory
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 
-# Download GLFW using FetchContent - disable X11 requirement
+# Your source files
+file(GLOB SOURCES
+    "main.cpp"
+    "memory/*.cpp"
+    "gamestate/*.cpp"
+    "draw/*.cpp"
+)
+
+# ImGui core sources from local directory
+set(IMGUI_SOURCES
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/memory
+    ${CMAKE_CURRENT_SOURCE_DIR}/gamestate
+    ${CMAKE_CURRENT_SOURCE_DIR}/draw
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+    ${IMGUI_DIR}
+)
+
+# Download GLFW and ImGui backends
 include(FetchContent)
 FetchContent_Declare(
     glfw
@@ -16,11 +40,8 @@ FetchContent_Declare(
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "Disable docs")
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "Disable tests")
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples")
-set(GLFW_USE_WAYLAND ON CACHE BOOL "Use Wayland")
-set(GLFW_USE_X11 OFF CACHE BOOL "Disable X11")
 FetchContent_MakeAvailable(glfw)
 
-# Download ImGui backends
 FetchContent_Declare(
     imgui_backends
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -28,50 +49,32 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui_backends)
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/memory
-    ${CMAKE_CURRENT_SOURCE_DIR}/gamestate
-    ${CMAKE_CURRENT_SOURCE_DIR}/draw
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils
-    ${IMGUI_DIR}
-    ${imgui_backends_SOURCE_DIR}/examples
-    ${glfw_SOURCE_DIR}/include
-)
-
-file(GLOB SOURCES
-    "main.cpp"
-    "memory/*.cpp"
-    "gamestate/*.cpp"
-    "draw/*.cpp"
-)
-
-# ImGui core sources from local imgui/ directory
-set(IMGUI_SOURCES
-    ${IMGUI_DIR}/imgui.cpp
-    ${IMGUI_DIR}/imgui_demo.cpp
-    ${IMGUI_DIR}/imgui_tables.cpp
-)
-
-# Backend sources
+# Add backend sources and includes
 set(IMGUI_BACKEND_SOURCES
     ${imgui_backends_SOURCE_DIR}/examples/imgui_impl_glfw.cpp
     ${imgui_backends_SOURCE_DIR}/examples/imgui_impl_opengl3.cpp
 )
 
+include_directories(
+    ${imgui_backends_SOURCE_DIR}/examples
+    ${glfw_SOURCE_DIR}/include
+)
+
 add_executable(danarc ${SOURCES} ${IMGUI_SOURCES} ${IMGUI_BACKEND_SOURCES})
+
+# Build GLFW from source
+add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR})
 
 find_package(OpenGL REQUIRED)
 
-# Build GLFW as part of the project
-add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR})
-
+# Link libraries - use the glfw target from the subdirectory
 target_link_libraries(danarc
     glfw
     OpenGL::GL
     m
     stdc++fs
     dl
+    pthread
 )
 
 target_compile_options(danarc PRIVATE -Wall -O2)
