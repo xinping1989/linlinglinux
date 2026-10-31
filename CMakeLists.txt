@@ -6,8 +6,25 @@ set(CMAKE_CXX_STANDARD 17)
 # Use local ImGui from imgui/ directory
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 
-find_package(glfw3 REQUIRED)
-find_package(OpenGL REQUIRED)
+# Download GLFW using FetchContent
+include(FetchContent)
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.3.8
+)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "Disable docs")
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "Disable tests")
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples")
+FetchContent_MakeAvailable(glfw)
+
+# Download ImGui backends
+FetchContent_Declare(
+    imgui_backends
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.89.9
+)
+FetchContent_MakeAvailable(imgui_backends)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16,7 +33,8 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/draw
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${IMGUI_DIR}
-    ${glfw3_INCLUDE_DIRS}
+    ${imgui_backends_SOURCE_DIR}/examples
+    ${glfw_SOURCE_DIR}/include
 )
 
 file(GLOB SOURCES
@@ -31,28 +49,20 @@ set(IMGUI_SOURCES
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp
     ${IMGUI_DIR}/imgui_tables.cpp
-    ${IMGUI_DIR}/imgui_draw.cpp
 )
 
-# Download ImGui backends (GLFW and OpenGL3 implementations)
-include(FetchContent)
-FetchContent_Declare(
-    imgui_backends
-    GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.89.9
-)
-FetchContent_MakeAvailable(imgui_backends)
-
-# Add backend sources
+# Backend sources
 set(IMGUI_BACKEND_SOURCES
     ${imgui_backends_SOURCE_DIR}/examples/imgui_impl_glfw.cpp
     ${imgui_backends_SOURCE_DIR}/examples/imgui_impl_opengl3.cpp
 )
 
-# Add backend include directory
-include_directories(${imgui_backends_SOURCE_DIR}/examples)
-
 add_executable(danarc ${SOURCES} ${IMGUI_SOURCES} ${IMGUI_BACKEND_SOURCES})
+
+find_package(OpenGL REQUIRED)
+
+# Build GLFW as part of the project
+add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR})
 
 target_link_libraries(danarc
     glfw
