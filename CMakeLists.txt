@@ -3,6 +3,15 @@ project(danarc)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Set GLFW options BEFORE fetching
+set(GLFW_USE_WAYLAND ON CACHE BOOL "Use Wayland")
+set(GLFW_USE_X11 OFF CACHE BOOL "Disable X11")
+set(GLFW_USE_COCOA OFF CACHE BOOL "Disable Cocoa")
+set(GLFW_USE_WIN32 OFF CACHE BOOL "Disable Win32")
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "Disable docs")
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "Disable tests")
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples")
+
 # Use local ImGui from imgui/ directory
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 
@@ -37,9 +46,6 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG 3.3.8
 )
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "Disable docs")
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "Disable tests")
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples")
 FetchContent_MakeAvailable(glfw)
 
 FetchContent_Declare(
@@ -67,7 +73,7 @@ add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR})
 
 find_package(OpenGL REQUIRED)
 
-# Link libraries - use the glfw target from the subdirectory
+# Link libraries
 target_link_libraries(danarc
     glfw
     OpenGL::GL
