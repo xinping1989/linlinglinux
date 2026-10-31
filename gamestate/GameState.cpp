@@ -79,13 +79,17 @@ GameState::FilterRet GameState::filterEnt(std::vector<RenderEntity> rawEnt, Fmin
 
 GameState::RawInfo GameState::getRawEnt(ptr uworld) {
     RawInfo ri{};
-    ptr persistentLevel = ReadMemory<ptr>(uworld + off::PERSISTENT_LEVEL);
-    DBG{std::cout << "PersistentLvl: 0x" << std::hex <<  persistentLevel << std::dec << std::endl;}
+    // Level pointer is ENCRYPTED - must decrypt it
+    ptr encryptedLevel = ReadMemory<ptr>(uworld + off::PERSISTENT_LEVEL);
+    ptr persistentLevel = DecodeLevelPointer(encryptedLevel);
+    DBG{std::cout << "Encrypted Level: 0x" << std::hex << encryptedLevel << " -> Decrypted: 0x" << persistentLevel << std::dec << std::endl;}
     if (!isValidPtr(persistentLevel)) {
+        std::cout << "[-] Failed to decrypt PersistentLevel!" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(10));
         return {};
     }
 
+    // Updated: ACTORS_PTR is now at 0x110 (TArray header: data_ptr + count + capacity)
     ptr actors = ReadMemory<ptr>(persistentLevel + off::ACTORS_PTR);
     DBG{std::cout << "Actors: 0x" << std::hex << actors << std::dec << std::endl;}
     int actorsCount = ReadMemory<int>(persistentLevel + off::ACTORS_PTR + 0x8);
@@ -113,48 +117,36 @@ GameState::RawInfo GameState::getRawEnt(ptr uworld) {
         ent.actor = actor;
         ent.vt = vt;
 
+        // Updated: ROOT_COMPONENT_PTR is still 0x248, but POS_PTR moved to 0x340
         ptr rootComp = ReadMemory<ptr>(actor + off::ROOT_COMPONENT_PTR);
         if (!isValidPtr(rootComp)) continue;
 
+        // Updated: Position is now at root + 0x340 (was 0x300)
         Vector3 pos = ReadMemory<Vector3>(rootComp + off::POS_PTR);
         if (std::abs(pos.x) < 100) continue;
         ent.pos = pos;
 
-        //Used for finding ViewMatrix
-        if (vt == vtabels::CAMMANAGER) ri.VM = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
+        // Updated: ViewMatrix is now at actor + 0x410 (CameraPOV structure)
+        if (vt == vtabels::CAMMANAGER) {
+            // Read FminimalViewInfo from CameraPOV
+            ri.VM = ReadMemory<FminimalViewInfo>(actor + off::VIEW_MATRIX);
+        }
 
         //Only if player or debugging
         if (ent.type == Object::PLAYER || isDebugMode) {
-            //Not adding this to offsets because they cannot typically be found in SDK dumps
-            ptr healthComponent = ReadMemory<ptr>(actor + 0xD78); //HealthComponent
+            // Updated: HealthComponent moved to 0xD88
+            ptr healthComponent = ReadMemory<ptr>(actor + off::HEALTH_COMPONENT);
             if (isValidPtr(healthComponent)) {
-                ent.playerHealth= ReadMemory<double>(healthComponent + 0x690); //CachedHealth
+                ent.playerHealth = ReadMemory<double>(healthComponent + off::HEALTH_VALUE);
                 if (ent.playerHealth < 1) ent.isDead = true;
             }
-            // // FindDeepHealthOffset(actor, 75.1292); //find second value from memsed
-            // auto dep1 = ReadMemory<ptr>(actor + 0xdc8);
-            // auto dep2 = ReadMemory<ptr>(dep1 + 0x1b0);
-            // float health = ReadMemory<float>(dep2 + 0xb8);
             if (ent.playerHealth < 1) ent.isDead = true;
 
-            //Does not work
-            // ptr mesh = ReadMemory<ptr>(actor + off::MESH);
-            // if (isValidPtr(mesh)) {
-            //     float lastSubmitTime = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME);
-            //     float lastRenderTime = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME + sizeof(float));
-            //     float lastRenderTimeOnScreen = ReadMemory<float>(mesh + off::LAST_SUBMIT_TIME + sizeof(float)*2);
-            //     bool isOnScreen = (lastRenderTime == lastRenderTimeOnScreen);
-            //     bool isRecent = (lastSubmitTime - lastRenderTime) <= 0.06f;
-            //     ent.isVisible = isOnScreen && isRecent;
-            // }
-
-            ent.teamID = ReadMemory<int>(actor + off::TEAM_ID);
+            // Updated: TEAM_ID now at PlayerState offset (0x3F0)
+            ent.teamID = ReadMemory<int>(actor + off::PLAYER_STATE);
         } else if (ent.type == Object::ARC) {
             ent.isDead = ReadMemory<bool>(actor + off::IS_DESTROYED);
         }
-
-        // getViewMatrix(actor); //uncomment to dump memort and find
-        // getPosPtr(actor); //can find both Root Component AND position, print out is Off: rootComp posPtr
 
         ri.rawEnt.push_back(ent);
     }
