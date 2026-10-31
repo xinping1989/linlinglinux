@@ -3,12 +3,21 @@ project(danarc)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(glfw3 REQUIRED)
+# Find GLFW - try both glfw3 and glfw names
+find_package(glfw3 3.3)
 if(NOT glfw3_FOUND)
-    find_package(glfw REQUIRED)
-    set(glfw3_LIBRARIES ${glfw_LIBRARIES})
-    set(glfw3_INCLUDE_DIRS ${glfw_INCLUDE_DIRS})
+    find_package(glfw 3.3)
+    if(glfw_FOUND)
+        set(glfw3_FOUND TRUE)
+        set(glfw3_LIBRARIES ${glfw_LIBRARIES})
+        set(glfw3_INCLUDE_DIRS ${glfw_INCLUDE_DIRS})
+    endif()
 endif()
+
+if(NOT glfw3_FOUND)
+    message(FATAL_ERROR "GLFW not found. Please install libglfw3-dev (Ubuntu/Debian) or glfw-devel (Fedora)")
+endif()
+
 find_package(OpenGL REQUIRED)
 
 # Download and include Dear ImGui with GLFW and OpenGL3 backends
@@ -20,7 +29,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
-# Also fetch the GLFW+OpenGL3 example files which contain the backend implementations
+# Also ensure the examples directory is available
 FetchContent_GetProperties(imgui)
 if(NOT imgui_POPULATED)
     FetchContent_Populate(imgui)
@@ -34,6 +43,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/examples
+    ${glfw3_INCLUDE_DIRS}
 )
 
 file(GLOB SOURCES
@@ -54,7 +64,6 @@ add_executable(danarc ${SOURCES} ${imgui_SOURCES} ${IMGUI_BACKEND_SOURCES})
 target_link_libraries(danarc
     ${glfw3_LIBRARIES}
     OpenGL::GL
-    imgui
     X11
     m
     stdc++fs
