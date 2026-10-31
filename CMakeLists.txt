@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
 
-# Download and include Dear ImGui
+# Download and include Dear ImGui with GLFW and OpenGL3 backends
 include(FetchContent)
 FetchContent_Declare(
     imgui
@@ -22,6 +22,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/draw
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/examples
 )
 
 file(GLOB SOURCES
