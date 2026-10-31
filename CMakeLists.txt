@@ -38,7 +38,13 @@ file(GLOB SOURCES
     "draw/*.cpp"
 )
 
-add_executable(danarc ${SOURCES} ${imgui_SOURCES})
+# Add ImGui backend sources for GLFW and OpenGL3
+set(IMGUI_BACKEND_SOURCES
+    ${imgui_SOURCE_DIR}/examples/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/examples/imgui_impl_opengl3.cpp
+)
+
+add_executable(danarc ${SOURCES} ${imgui_SOURCES} ${IMGUI_BACKEND_SOURCES})
 
 target_link_libraries(danarc
     glfw
