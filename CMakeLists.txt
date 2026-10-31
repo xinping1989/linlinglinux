@@ -6,35 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 # Use local ImGui from imgui/ directory
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 
-# Download ImGui backend implementations
-include(FetchContent)
-FetchContent_Declare(
-    imgui_backends
-    GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.89.9
-)
-FetchContent_MakeAvailable(imgui_backends)
-
-# Your source files
-file(GLOB SOURCES
-    "main.cpp"
-    "memory/*.cpp"
-    "gamestate/*.cpp"
-    "draw/*.cpp"
-)
-
-# ImGui core sources from local directory
-set(IMGUI_SOURCES
-    ${IMGUI_DIR}/imgui.cpp
-    ${IMGUI_DIR}/imgui_demo.cpp
-    ${IMGUI_DIR}/imgui_tables.cpp
-)
-
-# Backend sources
-set(IMGUI_BACKEND_SOURCES
-    ${imgui_backends_SOURCE_DIR}/examples/imgui_impl_glfw.cpp
-    ${imgui_backends_SOURCE_DIR}/examples/imgui_impl_opengl3.cpp
-)
+find_package(glfw3 REQUIRED)
+find_package(OpenGL REQUIRED)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -43,13 +16,20 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/draw
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
     ${IMGUI_DIR}
-    ${imgui_backends_SOURCE_DIR}/examples
+    ${IMGUI_DIR}/examples
+    ${glfw3_INCLUDE_DIRS}
 )
 
-add_executable(danarc ${SOURCES} ${IMGUI_SOURCES} ${IMGUI_BACKEND_SOURCES})
+file(GLOB SOURCES
+    "main.cpp"
+    "memory/*.cpp"
+    "gamestate/*.cpp"
+    "draw/*.cpp"
+    "imgui/*.cpp"
+    "imgui/examples/*.cpp"
+)
 
-find_package(glfw3 REQUIRED)
-find_package(OpenGL REQUIRED)
+add_executable(danarc ${SOURCES})
 
 target_link_libraries(danarc
     glfw
