@@ -10,6 +10,9 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG 3.3.8
 )
+# Disable GLFW's X11 requirement and use Wayland instead
+set(GLFW_USE_WAYLAND ON CACHE BOOL "Use Wayland")
+set(GLFW_USE_X11 OFF CACHE BOOL "Disable X11")
 FetchContent_MakeAvailable(glfw)
 
 find_package(OpenGL REQUIRED)
@@ -57,7 +60,6 @@ add_executable(danarc ${SOURCES} ${imgui_SOURCES} ${IMGUI_BACKEND_SOURCES} ${glf
 target_link_libraries(danarc
     glfw
     OpenGL::GL
-    X11
     m
     stdc++fs
     dl
