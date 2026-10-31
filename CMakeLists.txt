@@ -3,15 +3,6 @@ project(danarc)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# Set GLFW options BEFORE fetching
-set(GLFW_USE_WAYLAND ON CACHE BOOL "Use Wayland")
-set(GLFW_USE_X11 OFF CACHE BOOL "Disable X11")
-set(GLFW_USE_COCOA OFF CACHE BOOL "Disable Cocoa")
-set(GLFW_USE_WIN32 OFF CACHE BOOL "Disable Win32")
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "Disable docs")
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "Disable tests")
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples")
-
 # Use local ImGui from imgui/ directory
 set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 
@@ -41,6 +32,16 @@ include_directories(
 
 # Download GLFW and ImGui backends
 include(FetchContent)
+
+# First, download GLFW with Wayland support, no X11
+set(GLFW_USE_WAYLAND ON CACHE BOOL "Use Wayland")
+set(GLFW_USE_X11 OFF CACHE BOOL "Disable X11")
+set(GLFW_USE_COCOA OFF CACHE BOOL "Disable Cocoa")
+set(GLFW_USE_WIN32 OFF CACHE BOOL "Disable Win32")
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "Disable docs")
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "Disable tests")
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Disable examples")
+
 FetchContent_Declare(
     glfw
     GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -48,6 +49,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glfw)
 
+# Download ImGui backends only
 FetchContent_Declare(
     imgui_backends
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -66,14 +68,14 @@ include_directories(
     ${glfw_SOURCE_DIR}/include
 )
 
-add_executable(danarc ${SOURCES} ${IMGUI_SOURCES} ${IMGUI_BACKEND_SOURCES})
+# Build GLFW from source - but first patch its CMakeLists to skip ECM check
+# We'll use the glfw target directly instead of add_subdirectory
 
-# Build GLFW from source
-add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR})
+add_executable(danarc ${SOURCES} ${IMGUI_SOURCES} ${IMGUI_BACKEND_SOURCES})
 
 find_package(OpenGL REQUIRED)
 
-# Link libraries
+# Link to glfw library
 target_link_libraries(danarc
     glfw
     OpenGL::GL
