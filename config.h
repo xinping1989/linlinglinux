@@ -50,7 +50,7 @@ namespace off {
 
     // From UWorld : "class World : public Object", "struct World : public Object", "struct UWorld : public UObject"
     //Typically found between 0xF0 and 0150
-    pr PERSISTENT_LEVEL = 0x130;
+    pr PERSISTENT_LEVEL = 0x140;  // Updated: was 0x130
 
     // From PersistentLevel (ULevel) "Level* PersistentLevel;"
     // Known as AActor or Actor Array "struct Actor : public Object". "struct AActor : public UObject"
