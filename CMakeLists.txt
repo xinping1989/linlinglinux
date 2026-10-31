@@ -15,6 +15,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
+# Also fetch the GLFW+OpenGL3 example files which contain the backend implementations
+FetchContent_GetProperties(imgui)
+if(NOT imgui_POPULATED)
+    FetchContent_Populate(imgui)
+endif()
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/memory
